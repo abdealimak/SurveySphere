@@ -1,15 +1,8 @@
 .DS_Store
 Thumbs.db
 node_modules/
-
 .env
-
-# Logs
 *.log
-
-# VS Code settings (optional)
 .vscode/
-
-# Build folders
 dist/
 build/
