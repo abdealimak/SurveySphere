@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<!--
+    ============================================================
+    index.html  —  SurveySphere Main Application
+    ============================================================
+    The single-page app shell. Contains:
+      - Top navigation bar (brand, section tabs, API key button)
+      - Dashboard section (survey grid with tabs + search)
+      - Builder section (question editor + demographics sidebar)
+      - Analytics section (sidebar list + chart canvas)
+      - API Key modal
+      - Generate with AI modal
+      - Share modal
+      - Loading overlay + toast notifications
+
+    All JavaScript logic is in /js/*.js (loaded at bottom).
+    All styles are in /css/style.css.
+    ============================================================
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SurveySphere — Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js CDN — used in analytics.js for all data visualisations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+    <!-- ════════════════════════════════════════════════════
+         TOP NAVIGATION
+         Fixed bar at the top with:
+           - Brand logo (clicking it goes to dashboard)
+           - Section tabs (Dashboard / Builder / Analytics)
+           - API Key button (top-right)
+         ════════════════════════════════════════════════════ -->
+    <nav class="topnav">
+
+        <!-- Brand: logo SVG + "SurveySphere" text -->
+        <a class="nav-brand" href="#" onclick="showSection('dashboard');return false;">
+            <svg viewBox="0 0 36 36" fill="none" style="width:26px;height:26px;flex-shrink:0">
+                <circle cx="18" cy="18" r="16.5" stroke="rgba(201,168,76,0.28)" stroke-width="1"/>
+                <circle cx="18" cy="18" r="10"   stroke="rgba(201,168,76,0.5)"  stroke-width="1"/>
+                <circle cx="18" cy="18" r="3.5"  fill="#c9a84c"/>
+                <line x1="18" y1="1.5"  x2="18" y2="8"    stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="18" y1="28"   x2="18" y2="34.5" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="1.5" y1="18"  x2="8"  y2="18"   stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="28"  y1="18"  x2="34.5" y2="18" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="5.2"  y1="5.2"  x2="9.8"  y2="9.8"  stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+                <line x1="26.2" y1="26.2" x2="30.8" y2="30.8" stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+                <line x1="30.8" y1="5.2"  x2="26.2" y2="9.8"  stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+                <line x1="9.8"  y1="26.2" x2="5.2"  y2="30.8" stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+            </svg>
+            <span class="nav-brand-text">Survey<span>Sphere</span></span>
+        </a>
+
+        <!-- Section tabs — "Builder" opens a new survey directly -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" id="tab-dashboard" onclick="showSection('dashboard')">Dashboard</button>
+            <button class="nav-tab"        id="tab-builder"   onclick="BuilderManager.newSurvey()">Builder</button>
+            <button class="nav-tab"        id="tab-analytics" onclick="showSection('analytics')">Analytics</button>
+        </div>
+
+        <!-- API Key button — opens the key management modal -->
+        <div class="nav-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openApiModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                </svg>
+                API Key
+            </button>
+        </div>
+    </nav>
+
+
+    <!-- ════════════════════════════════════════════════════
+         DASHBOARD SECTION
+         Shows the user's surveys and templates in a card grid.
+         Includes:
+           - Title row with search + action buttons
+           - Tab switcher: "My Surveys" vs "Templates"
+           - surveysGrid: populated by app.js → renderDashTab()
+         ════════════════════════════════════════════════════ -->
+    <section class="section active" id="section-dashboard">
+        <div class="dashboard-body">
+
+            <!-- Header: title/subtitle on left, actions on right -->
+            <div class="dashboard-title-row">
+                <div>
+                    <h1>Your Surveys</h1>
+                    <p>Build, share, and analyze surveys from one place</p>
+                </div>
+                <div class="dashboard-actions">
+                    <!-- Live search — filters current tab as the user types -->
+                    <div class="search-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"
+                             style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input class="search-input" id="surveySearch" type="text"
+                               placeholder="Search…" oninput="filterSurveys(this.value)">
+                    </div>
+                    <!-- AI generation modal trigger -->
+                    <button class="btn btn-ai" onclick="openAiModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        Generate with AI
+                    </button>
+                    <!-- Opens builder with a blank survey -->
+                    <button class="btn btn-primary" onclick="BuilderManager.newSurvey()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Build Survey
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab switcher — only one tab is visible at a time -->
+            <div class="dashboard-header">
+                <div class="dashboard-tabs">
+                    <button class="dash-tab active" id="tabMySurveys"  onclick="switchDashTab('my')">My Surveys</button>
+                    <button class="dash-tab"        id="tabTemplates"  onclick="switchDashTab('templates')">Templates</button>
+                </div>
+            </div>
+
+            <!-- Card grid — populated dynamically by app.js -->
+            <div class="surveys-grid" id="surveysGrid"></div>
+
+        </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════════
+         BUILDER SECTION
+         Two-panel layout:
+           Left sidebar  — question type tiles + demographics config
+           Right canvas  — survey title, description, question cards
+         Footer          — Preview and Save Survey buttons
+         All interactivity is handled by builder.js
+         ════════════════════════════════════════════════════ -->
+    <section class="section" id="section-builder">
+        <div class="builder-layout">
+
+            <!-- ── Left Sidebar ──────────────────────────── -->
+            <aside class="builder-sidebar">
+
+                <!-- Question type picker — clicking a tile adds that type -->
+                <div class="sidebar-section">
+                    <div class="sidebar-label">Question Types</div>
+                    <div class="qtype-grid">
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('multiple_choice')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Multiple Choice</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('checkbox')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="9 12 11 14 15 10"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Checkboxes</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('text')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="14" y2="15"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Short Text</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('long_answer')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <line x1="4" y1="7" x2="20" y2="7"/>
+                                    <line x1="4" y1="12" x2="20" y2="12"/>
+                                    <line x1="4" y1="17" x2="14" y2="17"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Long Answer</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('rating')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Rating Scale</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('yes_no')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Yes / No</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('dropdown')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <rect x="3" y="5" width="18" height="14" rx="3"/>
+                                    <polyline points="8 10 12 14 16 10"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Dropdown</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('linear_scale')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                                    <line x1="4"  y1="12" x2="4"  y2="9"/>
+                                    <line x1="20" y1="12" x2="20" y2="9"/>
+                                    <line x1="12" y1="12" x2="12" y2="9"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Linear Scale</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('date')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8"  y1="2" x2="8"  y2="6"/>
+                                    <line x1="3"  y1="10" x2="21" y2="10"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Date</span>
+                        </div>
+                        <div class="qtype-tile" onclick="BuilderManager.addQuestion('number')">
+                            <div class="qtype-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                    <line x1="4"  y1="9"  x2="20" y2="9"/>
+                                    <line x1="4"  y1="15" x2="20" y2="15"/>
+                                    <line x1="10" y1="3"  x2="8"  y2="21"/>
+                                    <line x1="16" y1="3"  x2="14" y2="21"/>
+                                </svg>
+                            </div>
+                            <span class="qtype-label">Number</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demographics config — restricts who can take the survey -->
+                <div class="sidebar-section">
+                    <div class="sidebar-label">Demographics</div>
+                    <!-- Age range: respondents outside min–max are blocked -->
+                    <div class="demo-field">
+                        <div class="demo-field-label">Age Range</div>
+                        <div class="demo-range">
+                            <input class="form-input" id="demoAgeMin" type="number" placeholder="Min" min="0" max="120" style="padding:7px 10px;">
+                            <span>–</span>
+                            <input class="form-input" id="demoAgeMax" type="number" placeholder="Max" min="0" max="120" style="padding:7px 10px;">
+                        </div>
+                    </div>
+                    <div class="demo-field">
+                        <div class="demo-field-label">Gender</div>
+                        <select class="form-select" id="demoGender">
+                            <option value="any">Any</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="non-binary">Non-binary</option>
+                        </select>
+                    </div>
+                    <div class="demo-field">
+                        <div class="demo-field-label">Location</div>
+                        <select class="form-select" id="demoCountry">
+                            <option value="any">Any</option>
+                            <option value="US">United States</option>
+                            <option value="IN">India</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="CA">Canada</option>
+                            <option value="AU">Australia</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="demo-field">
+                        <div class="demo-field-label">Occupation</div>
+                        <select class="form-select" id="demoOccupation">
+                            <option value="any">Any</option>
+                            <option value="student">Student</option>
+                            <option value="employed">Employed</option>
+                            <option value="self-employed">Self-employed</option>
+                            <option value="unemployed">Unemployed</option>
+                            <option value="retired">Retired</option>
+                        </select>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- ── Right Canvas ───────────────────────────── -->
+            <div class="builder-main">
+                <div class="builder-canvas">
+                    <!-- Survey title and description inputs -->
+                    <input class="survey-title-input" id="surveyTitleInput"
+                           type="text" placeholder="Untitled Survey" maxlength="120">
+                    <textarea class="survey-desc-input" id="surveyDescInput"
+                              placeholder="Survey description (optional)" rows="2"></textarea>
+                    <div class="builder-divider"></div>
+                    <!-- Question cards are inserted here by builder.js -->
+                    <div class="questions-canvas" id="questionsCanvas">
+                        <div class="drop-hint">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            ← Pick a question type to get started
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Builder footer: Preview surveys before saving -->
+        <div class="builder-footer">
+            <button class="btn btn-secondary" onclick="BuilderManager.previewSurvey()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Preview
+            </button>
+            <button class="btn btn-primary" onclick="BuilderManager.saveSurvey()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Survey
+            </button>
+        </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════════
+         ANALYTICS SECTION
+         Two-panel layout:
+           Left sidebar  — clickable list of all surveys
+           Right main    — charts and AI insights panel
+         Populated by analytics.js
+         ════════════════════════════════════════════════════ -->
+    <section class="section" id="section-analytics">
+        <div class="analytics-layout">
+            <!-- Survey list sidebar — loaded by loadAnalyticsSidebar() -->
+            <aside class="analytics-sidebar" id="analyticsSidebar">
+                <div class="analytics-sidebar-label">Surveys</div>
+                <p style="font-size:12px;color:var(--text-muted);padding:0 8px">Loading…</p>
+            </aside>
+            <!-- Main analytics canvas — populated when a survey is selected -->
+            <div class="analytics-main" id="analyticsMain">
+                <div class="analytics-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6"  y1="20" x2="6"  y2="14"/>
+                    </svg>
+                    <p>Select a survey from the left to view analytics</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div><!-- /#app -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     API KEY MODAL
+     Allows the user to enter and verify their Groq API key.
+     The key is saved to localStorage via StorageManager.setApiKey().
+     ════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="apiModal">
+    <div class="modal">
+        <div class="modal-head">
+            <h3>API Key</h3>
+            <button class="modal-close" onclick="closeApiModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Groq API Key</label>
+                <input class="form-input" id="apiKeyInput" type="password" placeholder="gsk_…">
+                <p class="form-help">
+                    Required for AI survey generation and response analysis.
+                    Get your free key at
+                    <a href="https://console.groq.com" target="_blank" style="color:var(--gold)">console.groq.com</a>
+                </p>
+            </div>
+            <!-- Status message shown after Save & Verify is clicked -->
+            <div id="apiStatus" class="api-status"></div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-secondary" onclick="closeApiModal()">Cancel</button>
+            <button class="btn btn-primary"   onclick="saveApiKey()">Save & Verify</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     GENERATE WITH AI MODAL
+     Collects survey parameters, then calls AIManager.generateSurvey()
+     which sends a prompt to Groq and parses the returned JSON
+     into a complete survey object.
+     ════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="aiModal">
+    <div class="modal" style="max-width:560px">
+        <div class="modal-head">
+            <h3>✦ Generate Survey with AI</h3>
+            <button class="modal-close" onclick="closeAiModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="aiForm" onsubmit="submitAiForm(event)">
+                <!-- Row 1: title + audience -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Survey Title *</label>
+                        <input class="form-input" id="aiTitle" required placeholder="e.g. Customer Satisfaction">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Target Audience *</label>
+                        <input class="form-input" id="aiAudience" required placeholder="e.g. App users aged 18-35">
+                    </div>
+                </div>
+                <!-- Purpose drives what kind of questions AI generates -->
+                <div class="form-group">
+                    <label class="form-label">Purpose / Goal *</label>
+                    <input class="form-input" id="aiPurpose" required placeholder="What do you want to learn?">
+                </div>
+                <!-- Optional topics to focus the AI's question selection -->
+                <div class="form-group">
+                    <label class="form-label">Specific Topics (optional)</label>
+                    <input class="form-input" id="aiTopics" placeholder="e.g. UI, pricing, support quality">
+                </div>
+                <!-- Row 2: question count + tone -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Number of Questions</label>
+                        <select class="form-select" id="aiCount">
+                            <option value="5">5</option>
+                            <option value="7" selected>7</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tone</label>
+                        <select class="form-select" id="aiTone">
+                            <option value="professional">Professional</option>
+                            <option value="friendly" selected>Friendly</option>
+                            <option value="casual">Casual</option>
+                            <option value="formal">Formal</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Question types the AI should use when building the survey -->
+                <div class="form-group">
+                    <label class="form-label">Question Types to Include</label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item"><input type="checkbox" class="qtype-cb" value="multiple_choice" checked> Multiple Choice</label>
+                        <label class="checkbox-item"><input type="checkbox" class="qtype-cb" value="rating"          checked> Rating Scale</label>
+                        <label class="checkbox-item"><input type="checkbox" class="qtype-cb" value="text">                   Short Text</label>
+                        <label class="checkbox-item"><input type="checkbox" class="qtype-cb" value="yes_no"          checked> Yes / No</label>
+                        <label class="checkbox-item"><input type="checkbox" class="qtype-cb" value="checkbox">               Checkboxes</label>
+                        <label class="checkbox-item"><input type="checkbox" class="qtype-cb" value="long_answer">            Long Answer</label>
+                    </div>
+                </div>
+                <!-- Inline error message shown if validation fails -->
+                <div id="aiError" style="font-size:12px;color:var(--red);min-height:18px"></div>
+            </form>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-secondary" onclick="closeAiModal()">Cancel</button>
+            <button class="btn btn-primary"   onclick="submitAiForm(event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                Generate Survey
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     SHARE MODAL
+     Displays the shareable survey link (survey.html?id=...).
+     The link opens survey.html in a new tab where respondents
+     can fill in and submit the survey.
+     ════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="shareModal">
+    <div class="modal" style="max-width:440px">
+        <div class="modal-head">
+            <h3>Share Survey</h3>
+            <button class="modal-close" onclick="closeShareModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Survey Link</label>
+                <div class="share-input-row">
+                    <input class="form-input" id="shareLink" type="text" readonly>
+                    <button class="btn btn-primary" onclick="copyShareLink()">Copy</button>
+                </div>
+                <p class="form-help">Share this link with respondents. Opens in a new tab.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     LOADING OVERLAY
+     Shown during async operations (AI generation, AI analysis).
+     Displayed/hidden via showLoading(text) and hideLoading().
+     ════════════════════════════════════════════════════════ -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Loading…</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     JAVASCRIPT — loaded in dependency order:
+       storage.js  → data layer (must load first)
+       ai.js       → Groq API calls (needs StorageManager)
+       builder.js  → survey editor (needs StorageManager)
+       analytics.js→ charts & insights (needs StorageManager + AIManager)
+       app.js      → app init, routing, modals (needs everything)
+     ════════════════════════════════════════════════════════ -->
+<script src="js/storage.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/builder.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

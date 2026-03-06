@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<!--
+    ============================================================
+    survey.html  —  SurveySphere Respondent Survey Form
+    ============================================================
+    Opened by respondents via the share link: survey.html?id=xxx
+    Loads the survey from localStorage using the ?id= parameter
+    and walks the respondent through it one question at a time.
+
+    Includes:
+      - surveyNotFound view  : shown when the ID is invalid
+      - surveyForm view      : the active question-by-question form
+          · survey-header    : brand logo + progress bar
+          · survey-body      : rendered by survey.js per question
+          · survey-nav       : Previous / Next / Submit buttons
+      - surveyCompleted view : thank you screen after submission
+
+    All logic is handled by survey.js.
+    Styles come from css/style.css + inline overrides in <style>.
+    ============================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survey — SurveySphere</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; background: var(--bg); }
+
+.survey-shell {
+    width: 100%;
+    max-width: 640px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.survey-header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--border);
+}
+.survey-brand {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 18px;
+    text-decoration: none;
+}
+.survey-brand-icon {
+    width: 22px;
+    height: 22px;
+    background: var(--gold);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.survey-brand-icon svg { width: 12px; height: 12px; fill: #080808; }
+.survey-brand-text { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.02em; }
+.survey-brand-text span { color: var(--gold); }
+
+.survey-progress { height: 2px; background: var(--border); border-radius: 1px; margin-bottom: 10px; }
+.survey-progress-fill { height: 100%; background: var(--gold); border-radius: 1px; transition: width 0.4s ease; }
+.survey-progress-label { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+
+.survey-body { padding: 28px 32px; min-height: 260px; }
+
+.question-number { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.question-text { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 22px; letter-spacing: -0.01em; line-height: 1.4; }
+.question-required { color: var(--red); margin-left: 3px; }
+
+.option-list { display: flex; flex-direction: column; gap: 9px; }
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+.option-item:hover { border-color: var(--border-hover); background: var(--bg-hover); }
+.option-item.selected { border-color: var(--gold-border); background: var(--gold-dim); }
+.option-item input { display: none; }
+.option-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-hover);
+    flex-shrink: 0;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.option-item.selected .option-dot { border-color: var(--gold); background: var(--gold); }
+.option-item.selected .option-dot::after { content: ''; width: 5px; height: 5px; background: #080808; border-radius: 50%; }
+.option-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1.5px solid var(--border-hover);
+    flex-shrink: 0;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.option-item.selected .option-check { border-color: var(--gold); background: var(--gold); }
+.option-item.selected .option-check::after { content: '✓'; color: #080808; font-size: 10px; font-weight: 700; }
+.option-label { font-size: 14px; color: var(--text); }
+
+.form-textarea { min-height: 100px; }
+.survey-select { width: 100%; }
+
+.rating-row { display: flex; gap: 9px; flex-wrap: wrap; }
+.rating-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.rating-btn:hover { border-color: var(--gold-border); color: var(--gold); }
+.rating-btn.selected { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.rating-scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+.question-error {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--red-dim);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 6px;
+    color: var(--red);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.question-error svg { flex-shrink: 0; }
+
+.survey-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px 24px;
+}
+
+.completion-screen {
+    padding: 48px 32px;
+    text-align: center;
+}
+.completion-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+.completion-icon svg { width: 26px; height: 26px; color: var(--gold); }
+.completion-screen h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+.completion-screen p { font-size: 14px; color: var(--text-muted); }
+
+.not-found { padding: 64px 32px; text-align: center; color: var(--text-muted); }
+.not-found h2 { font-size: 20px; color: var(--text); margin-bottom: 10px; }
+
+.eligibility-card { padding: 0 0 20px; }
+.eligibility-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.eligibility-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<div class="survey-shell">
+    <!-- Not found -->
+    <div id="surveyNotFound" style="display:none">
+        <div class="not-found">
+            <h2>Survey not found</h2>
+            <p>This survey may have been deleted or the link is incorrect.</p>
+        </div>
+    </div>
+
+    <!-- Survey form -->
+    <div id="surveyForm" style="display:none">
+        <div class="survey-header">
+            <div class="survey-brand">
+                <svg viewBox="0 0 36 36" fill="none" style="width:20px;height:20px;flex-shrink:0">
+                    <circle cx="18" cy="18" r="16.5" stroke="rgba(201,168,76,0.28)" stroke-width="1"/>
+                    <circle cx="18" cy="18" r="10" stroke="rgba(201,168,76,0.5)" stroke-width="1"/>
+                    <circle cx="18" cy="18" r="3.5" fill="#c9a84c"/>
+                    <line x1="18" y1="1.5" x2="18" y2="8" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="18" y1="28" x2="18" y2="34.5" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="1.5" y1="18" x2="8" y2="18" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="28" y1="18" x2="34.5" y2="18" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="5.2" y1="5.2" x2="9.8" y2="9.8" stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+                    <line x1="26.2" y1="26.2" x2="30.8" y2="30.8" stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+                    <line x1="30.8" y1="5.2" x2="26.2" y2="9.8" stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+                    <line x1="9.8" y1="26.2" x2="5.2" y2="30.8" stroke="rgba(201,168,76,0.38)" stroke-width="1" stroke-linecap="round"/>
+                </svg>
+                <span class="survey-brand-text">Survey<span>Sphere</span></span>
+            </div>
+            <div class="survey-progress">
+                <div class="survey-progress-fill" id="progressFill" style="width:0%"></div>
+            </div>
+            <div class="survey-progress-label" id="progressLabel">1 / 1</div>
+        </div>
+
+        <div class="survey-body" id="questionContainer"></div>
+
+        <div class="survey-nav">
+            <button class="btn btn-secondary" id="prevBtn" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+                Previous
+            </button>
+            <span></span>
+            <button class="btn btn-primary" id="nextBtn" style="display:none">
+                Next
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button class="btn btn-primary" id="submitBtn" style="display:none">Submit Survey</button>
+        </div>
+    </div>
+
+    <!-- Completion -->
+    <div id="surveyCompleted" style="display:none">
+        <div class="completion-screen">
+            <div class="completion-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h2>Thank you!</h2>
+            <p>Your response has been recorded.</p>
+            <div id="completionTime" style="margin-top:8px"></div>
+        </div>
+    </div>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/survey.js"></script>
+</body>
+</html>
