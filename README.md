@@ -2,7 +2,7 @@
 
 > Build surveys. Collect responses. Understand them — with AI.
 
-**[Live Demo →](https://surveysphere-in.netlify.app)**
+**[Live Site →](https://surveysphere-in.netlify.app)**
 
 ---
 
