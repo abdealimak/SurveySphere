@@ -1,4 +1,4 @@
-# SurveySphere — AI-Powered Survey Intelligence Platform
+# 🌐 SurveySphere — AI-Powered Survey Intelligence Platform
 
 > Build surveys. Collect responses. Understand them — with AI.
 
@@ -6,7 +6,7 @@
 
 ---
 
-## What is SurveySphere?
+## 💡 What is SurveySphere?
 
 SurveySphere is a fully client-side survey platform with AI integration. No backend, no database, no sign-up required. Build a survey in minutes, share it via link, and get AI-powered insights from the responses.
 
@@ -14,40 +14,38 @@ Built with vanilla HTML, CSS, and JavaScript — deployed as a static site on Ne
 
 ---
 
-## Features
+## ✨ Features
 
-- **AI Survey Generation** — describe your survey in plain English, get a complete survey instantly (powered by Groq + Llama 3.3-70B)
-- **10 Question Types** — Multiple Choice, Checkboxes, Short Text, Long Answer, Rating Scale, Yes/No, Dropdown, Linear Scale, Date, Number
-- **Demographic Eligibility Gate** — restrict surveys by age, gender, country, and occupation
-- **Smart Analytics** — Chart.js visualisations with automatically chosen chart types per question
-- **AI Insights** — sentiment analysis, key themes, and prioritised recommendations from response data
-- **Export** — download responses as CSV or plain-text TXT
-- **Time Tracking** — per-question and total completion time recorded per response
-- **6 Built-in Templates** — pre-loaded college survey templates ready to share
-- **Share Links** — one-click shareable URL for any survey
-- **Zero Backend** — all data stored in `localStorage`
-
----
-
-## Screenshots
-
-| Dashboard | Builder | Analytics |
-|-----------|---------|-----------|
-| My Surveys + Templates | Drag-and-drop style question builder | Chart.js charts + AI Insights panel |
+- 🤖 **AI Survey Generation** — describe your survey in plain English, get a complete survey instantly (powered by Groq + Llama 3.3-70B)
+- 📝 **10 Question Types** — Multiple Choice, Checkboxes, Short Text, Long Answer, Rating Scale, Yes/No, Dropdown, Linear Scale, Date, Number
+- 🎯 **Demographic Eligibility Gate** — restrict surveys by age, gender, country, and occupation
+- 📊 **Smart Analytics** — Chart.js visualisations with automatically chosen chart types per question
+- 💬 **AI Insights** — sentiment analysis, key themes, and prioritised recommendations from response data
+- 📥 **Export** — download responses as CSV or plain-text TXT
+- ⏱️ **Time Tracking** — per-question and total completion time recorded per response
+- 📋 **6 Built-in Templates** — pre-loaded college survey templates ready to share
+- 🔗 **Share Links** — one-click shareable URL for any survey
+- ⚡ **Zero Backend** — all data stored in `localStorage`
 
 ---
 
-## Getting Started
+## 📸 Screenshots
 
-No installation needed. Just open `index.html` in a browser — or visit the live site.
+**Dashboard — browse your surveys and templates**
+![Dashboard](screenshots/dashboard.png)
 
-```bash
-git clone https://github.com/abdealimak/SurveySphere.git
-cd SurveySphere
-open index.html   # or just drag into a browser
-```
+**Builder — build surveys with 10 question types**
+![Builder](screenshots/builder.png)
 
-### AI Features (Optional)
+**Analytics — smart charts per question type**
+![Analytics](screenshots/analytics.png)
+
+**AI Insights — sentiment, themes & recommendations**
+![AI Insights](screenshots/ai-insights.png)
+
+---
+
+## 🤖 AI Features
 
 AI generation and AI analysis require a free Groq API key.
 
@@ -59,28 +57,29 @@ The key is stored only in your browser's `localStorage` — it is never sent any
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 SurveySphere/
-├── index.html          # Main SPA — dashboard, builder, analytics
-├── survey.html         # Respondent-facing survey form (opened via share link)
-├── landing.html        # Marketing landing page
-├── _redirects          # Netlify redirect — routes / to landing.html
+├── index.html            # Main SPA — dashboard, builder, analytics
+├── survey.html           # Respondent-facing survey form (opened via share link)
+├── landing.html          # Marketing landing page
+├── _redirects            # Netlify redirect — routes / to landing.html
+├── screenshots/          # README screenshots
 ├── css/
-│   └── style.css       # Complete design system (dark theme, gold accent)
+│   └── style.css         # Complete design system (dark theme, gold accent)
 └── js/
-    ├── storage.js      # Data layer — all localStorage CRUD + exports
-    ├── ai.js           # Groq API integration — generate & analyse
-    ├── app.js          # App controller — routing, dashboard, modals
-    ├── builder.js      # Survey builder — question management & canvas
-    ├── analytics.js    # Analytics engine — Chart.js + AI insights
-    └── survey.js       # Survey runner — eligibility gate & submission
+    ├── storage.js        # Data layer — all localStorage CRUD + exports
+    ├── ai.js             # Groq API integration — generate & analyse
+    ├── app.js            # App controller — routing, dashboard, modals
+    ├── builder.js        # Survey builder — question management & canvas
+    ├── analytics.js      # Analytics engine — Chart.js + AI insights
+    └── survey.js         # Survey runner — eligibility gate & submission
 ```
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -94,22 +93,7 @@ SurveySphere/
 
 ---
 
-## AI Rate Limits (Free Tier)
-
-The app uses `llama-3.3-70b-versatile` via Groq's free tier:
-
-| Limit | Amount |
-|---|---|
-| Requests / minute | 30 |
-| Requests / day | 1,000 |
-| Tokens / minute | 12,000 |
-| Tokens / day | 100,000 |
-
-Each "Generate with AI" or "AI Insights" click uses one request.
-
----
-
-## How It Works
+## 🔄 How It Works
 
 ### Survey Flow
 1. **Build** — add questions in the builder, or generate with AI
@@ -122,27 +106,11 @@ Everything is stored in three `localStorage` keys:
 - `surveysphere_responses` — all response data, keyed by survey ID
 - `surveysphere_api_key` — your Groq API key
 
-> Since data lives in the browser, each device/browser instance has its own isolated data. For shared persistent storage, a backend (Firebase, Supabase) would be needed.
+> ⚠️ Since data lives in the browser, each device/browser instance has its own isolated data. For shared persistent storage, a backend (Firebase, Supabase) would be needed.
 
 ---
 
-## Deployment
-
-The app is a static site — deploy anywhere that serves HTML files.
-
-### Netlify (recommended)
-1. Push to GitHub
-2. Connect repo in Netlify dashboard
-3. No build command needed — publish directory is the repo root
-
-The `_redirects` file routes the root URL to `landing.html`:
-```
-/    /landing.html    200
-```
-
----
-
-## Built-in Templates
+## 📋 Built-in Templates
 
 Six survey templates are pre-loaded for Indian college use cases:
 
@@ -155,7 +123,7 @@ Six survey templates are pre-loaded for Indian college use cases:
 
 ---
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 - [Groq](https://groq.com) — ultra-fast LLM inference API
 - [Meta AI](https://ai.meta.com) — Llama 3.3-70B model
@@ -164,11 +132,6 @@ Six survey templates are pre-loaded for Indian college use cases:
 
 ---
 
-## Author
+## 👨‍💻 Developer
 
-**Abdeali Makda** — ITM Skills University, School of Future Tech  
-Cohort: Larry Page | Roll: 150096725096
-
----
-
-*Made for the School of Future Tech — ITM Skills University*
+**Abdeali Makda**
