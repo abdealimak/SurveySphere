@@ -421,7 +421,7 @@ const BuilderManager = {
             showToast('Save survey first to preview', 'error');
             return;
         }
-        const base = window.location.origin + window.location.pathname.replace('index.html', '');
+        const base = window.location.origin + '/';
         window.open(base + 'survey.html?id=' + this.surveyId, '_blank');
     },
 

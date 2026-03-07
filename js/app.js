@@ -319,7 +319,7 @@ function deleteSurvey(id) {
  * as a query parameter, then shows the share modal.
  */
 function shareSurvey(id) {
-    const base = window.location.origin + window.location.pathname.replace('index.html', '');
+    const base = window.location.origin + '/';
     const url  = base + 'survey.html?id=' + id;
     document.getElementById('shareLink').value = url;
     document.getElementById('shareModal').classList.add('active');
