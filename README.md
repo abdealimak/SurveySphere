@@ -61,20 +61,28 @@ The key is stored only in your browser's `localStorage` — it is never sent any
 
 ```
 SurveySphere/
-├── index.html            # Main SPA — dashboard, builder, analytics
-├── survey.html           # Respondent-facing survey form (opened via share link)
-├── landing.html          # Marketing landing page
-├── _redirects            # Netlify redirect — routes / to landing.html
-├── screenshots/          # README screenshots
-├── css/
-│   └── style.css         # Complete design system (dark theme, gold accent)
-└── js/
-    ├── storage.js        # Data layer — all localStorage CRUD + exports
-    ├── ai.js             # Groq API integration — generate & analyse
-    ├── app.js            # App controller — routing, dashboard, modals
-    ├── builder.js        # Survey builder — question management & canvas
-    ├── analytics.js      # Analytics engine — Chart.js + AI insights
-    └── survey.js         # Survey runner — eligibility gate & submission
+├── 📁 Documentations
+│   └── 📕 AbdealiMakda_SurveySphere_CaseStudyReport.pdf
+├── 📁 css
+│   └── 🎨 style.css
+├── 📁 js
+│   ├── 📄 ai.js
+│   ├── 📄 analytics.js
+│   ├── 📄 app.js
+│   ├── 📄 builder.js
+│   ├── 📄 storage.js
+│   └── 📄 survey.js
+├── 📁 screenshots
+│   ├── 🖼️ ai-insights.png
+│   ├── 🖼️ analytics.png
+│   ├── 🖼️ builder.png
+│   └── 🖼️ dashboard.png
+├── ⚙️ .gitignore
+├── 📝 README.md
+├── 📄 _redirects
+├── 🌐 app.html
+├── 🌐 landing.html
+└── 🌐 survey.html
 ```
 
 ---
