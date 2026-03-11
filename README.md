@@ -2,7 +2,7 @@
 
 > Build surveys. Collect responses. Understand them — with AI.
 
-**[Live Site →][(https://survey-sphere-mu.vercel.app/)]**
+**[Live Site →](https://survey-sphere-mu.vercel.app/)**
 
 ---
 
