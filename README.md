@@ -62,7 +62,8 @@ The key is stored only in your browser's `localStorage` — it is never sent any
 ```
 SurveySphere/
 ├── 📁 Documentations
-│   └── 📕 AbdealiMakda_SurveySphere_CaseStudyReport.pdf
+│   ├── 📕 CaseStudyReport.pdf
+│   └── 📕 SurveySphere_Presentation.pdf
 ├── 📁 css
 │   └── 🎨 style.css
 ├── 📁 js
@@ -82,7 +83,8 @@ SurveySphere/
 ├── 📄 _redirects
 ├── 🌐 app.html
 ├── 🌐 landing.html
-└── 🌐 survey.html
+├── 🌐 survey.html
+└── ⚙️ vercel.json
 ```
 
 ---
